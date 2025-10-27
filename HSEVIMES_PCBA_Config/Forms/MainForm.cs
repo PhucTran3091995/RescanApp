@@ -1,7 +1,8 @@
 ﻿using HSEVIMES_PCBA_Config.Services;
 using HSEVIMES_PCBA_Config.UI;
 using QRCoder;
-                            // available
+using HSEVIMES_PCBA_Config.Data;
+using HSEVIMES_PCBA_Config.Services;            // available
 using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
@@ -11,8 +12,9 @@ using System.IO.Ports;
 using System.Management;
 using System.Media;
 using System.Text;
-using System.Text.RegularExpressions;
+using Microsoft.EntityFrameworkCore;
 using System.Windows.Forms; // ensure Keys, KeyEventArgs
+using MySqlConnector;
 
 namespace HSEVIMES_PCBA_Config
 {
@@ -27,12 +29,43 @@ namespace HSEVIMES_PCBA_Config
         public MainForm()
         {
             InitializeComponent();
+            Load += MainForm_Load;
             // Wire textbox key event so scanner (which usually sends Enter) triggers processing
             txtBarcode.KeyDown += TxtBarcode_KeyDown;
+            // removed duplicate: do not re-subscribe btnCheckSQL here if designer already wires it
+            btnAddCom.Click += btnAddCom_Click;
+            cbCheckCom.DropDown += CbCheckCom_DropDown;
             InitSerialFromAppSettings();
             txtBarcode.Focus();
+            LoadAvailableComPorts();
         }
 
+        private async void MainForm_Load(object? sender, EventArgs e)
+        {
+            await RefreshTodayPbaSummaryAsync();
+        }
+
+        private async Task RefreshTodayPbaSummaryAsync()
+        {
+            var summary = await _scanService.GetTodayPbaSummaryAsync();
+            gridResults.DataSource = null;
+            gridResults.DataSource = summary;
+            gridResults.Refresh();
+        }
+
+        private void ClearRescanInfo()
+        {
+            lblModelName.Text = string.Empty;
+            lblModelSuffix.Text = string.Empty;
+            lblPartNo.Text = string.Empty;
+            lblWO.Text = string.Empty;
+            lblQty.Text = string.Empty;
+            lblProdDate.Text = string.Empty;
+            lblYearPBA.Text = string.Empty;
+            lblMonthPBA.Text = string.Empty;
+            picBarcodePBA.Image = null;
+            picBarcodePBA.Text = string.Empty;
+        }
         private async void btnScan_Click(object sender, EventArgs e)
         {
             await ProcessScannedPidAsync();
@@ -61,8 +94,7 @@ namespace HSEVIMES_PCBA_Config
             lblMessage.Text = message;
 
             // reload data
-            gridResults.DataSource = null;
-            gridResults.DataSource = await _scanService.GetAllRescansAsync();
+            await RefreshTodayPbaSummaryAsync();
             if (ok)
             {
                 await DisplayRescanInfoAsync(pid);
@@ -82,11 +114,13 @@ namespace HSEVIMES_PCBA_Config
 
             if (rescan != null)
             {
-                lblModelName.Text = rescan.Model_Name ?? "";
-                lblModelSuffix.Text = rescan.Model_Suffix ?? "";
+                var modelInfo = await _scanService.GetModelInfoByPartNoAsync(rescan.Part_No);
+
+                lblModelName.Text = modelInfo?.Model_Name ?? rescan.Model_Name ?? string.Empty;
+                lblModelSuffix.Text = modelInfo?.Model_Suffix ?? rescan.Model_Suffix ?? string.Empty;
                 // Nếu có ModelSuffix, hãy thêm vào model và database, ví dụ: lblModelSuffix.Text = rescan.Model_Suffix ?? "";
-                lblPartNo.Text = rescan.Part_No ?? "";
-                lblWO.Text = rescan.Work_Order ?? "";
+                lblPartNo.Text = rescan.Part_No ?? string.Empty;
+                lblWO.Text = rescan.Work_Order ?? string.Empty;
                 lblQty.Text = rescans.Where(r => r.Pba == rescan.Pba).Sum(r => r.Qty).ToString();
                 lblProdDate.Text = DateTime.Now.ToString("yyyy-MM-dd");
 
@@ -95,7 +129,7 @@ namespace HSEVIMES_PCBA_Config
                 lblMonthPBA.Text = DateTime.Now.Month.ToString("D2");
 
                 // Barcode PBA
-                string pbaCode = rescan.Pba ?? "";
+                string pbaCode = rescan.Pba ?? string.Empty;
                 picBarcodePBA.Text = pbaCode;
 
                 // Tạo QR code và hiển thị lên PictureBox
@@ -104,8 +138,8 @@ namespace HSEVIMES_PCBA_Config
                     QRCodeGenerator qrGenerator = new QRCodeGenerator();
                     QRCodeData qrCodeData = qrGenerator.CreateQrCode(pbaCode, QRCodeGenerator.ECCLevel.Q);
                     QRCode qrCode = new QRCode(qrCodeData);
-                    Bitmap qrCodeImage = qrCode.GetGraphic(5);
-                    picBarcodePBA.Image = qrCodeImage; // 10 là kích thước pixel cho mỗi ô
+                    Bitmap qrCodeImage = qrCode.GetGraphic(3);
+                    picBarcodePBA.Image = qrCodeImage; // 3 là kích thước pixel cho mỗi ô
                 }
                 else
                 {
@@ -114,15 +148,7 @@ namespace HSEVIMES_PCBA_Config
             }
             else
             {
-                lblModelName.Text = "";
-                lblModelSuffix.Text = "";
-                lblPartNo.Text = "";
-                lblWO.Text = "";
-                lblQty.Text = "";
-                lblProdDate.Text = "";
-                lblYearPBA.Text = "";
-                lblMonthPBA.Text = "";
-                picBarcodePBA.Image = null;
+                ClearRescanInfo();
             }
         }
 
@@ -174,6 +200,7 @@ namespace HSEVIMES_PCBA_Config
                 var drawer = new DrawLabel();
                 int pageIndex = 0;
 
+                bool hasPrinted = false;
                 using (var printDoc = new PrintDocument())
                 {
 
@@ -199,16 +226,15 @@ namespace HSEVIMES_PCBA_Config
 
                     // print (synchronous)
                     printDoc.Print();
+                    hasPrinted = true;
                 }
 
-                // After printing: reset and refresh UI
-                _scanService.ResetCurrentPba();
-
-                gridResults.DataSource = null;
-                gridResults.DataSource = await _scanService.GetAllRescansAsync();
-                gridResults.Refresh();
-
-                await DisplayRescanInfoAsync(itemsInCurrentPba.Last().Pid ?? string.Empty);
+                if (hasPrinted)
+                {
+                    _scanService.ResetCurrentPba();
+                    await RefreshTodayPbaSummaryAsync();
+                    ClearRescanInfo();
+                }
 
                 txtBarcode.Clear();
                 txtBarcode.Focus();
@@ -268,9 +294,7 @@ namespace HSEVIMES_PCBA_Config
                 ok ? MessageBoxIcon.Information : MessageBoxIcon.Error);
 
             // refresh UI
-            gridResults.DataSource = null;
-            gridResults.DataSource = await _scanService.GetAllRescansAsync();
-            gridResults.Refresh();
+            await RefreshTodayPbaSummaryAsync();
 
             txtDeletePBA.Clear();
             txtDeletePBA.Focus();
@@ -510,41 +534,309 @@ namespace HSEVIMES_PCBA_Config
                 if (string.IsNullOrWhiteSpace(portName))
                     return; // scanner not configured
 
-                int baud = int.TryParse(ConfigurationManager.AppSettings["PortScanner.BaudRate"], out var b) ? b : 9600;
-                int dataBits = int.TryParse(ConfigurationManager.AppSettings["PortScanner.DataBits"], out var db) ? db : 8;
-
-                Parity parity = Parity.None;
-                var parityStr = ConfigurationManager.AppSettings["PortScanner.Parity"];
-                if (!string.IsNullOrWhiteSpace(parityStr) && Enum.TryParse<Parity>(parityStr, true, out var p)) parity = p;
-
-                StopBits stopBits = StopBits.One;
-                var stopBitsStr = ConfigurationManager.AppSettings["PortScanner.StopBits"];
-                if (!string.IsNullOrWhiteSpace(stopBitsStr) && Enum.TryParse<StopBits>(stopBitsStr, true, out var sb)) stopBits = sb;
-
-                _serialPort = new SerialPort(portName, baud, parity, dataBits, stopBits)
-                {
-                    NewLine = "\n",
-                    ReadTimeout = 500, // giảm thời gian chờ
-                    ReceivedBytesThreshold = 1, // trigger ngay khi có byte mới
-                    DtrEnable = true,
-                    RtsEnable = true
-                };
-
-                _serialPort.DataReceived += SerialPort_DataReceived;
-
                 try
                 {
-                    _serialPort.Open();
+                    ConfigureSerialPort(portName);
                 }
                 catch (Exception ex)
                 {
-                    //MessageBox.Show($"❌ Không thể mở cổng {_serialPort.PortName}: {ex.Message}");
+                    Debug.WriteLine($"[WARN] Không thể mở cổng được cấu hình {portName}: {ex.Message}");
                 }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[WARN] InitSerialFromAppSettings: {ex.Message}");
+            }
+        }
+
+
+
+        private void LoadAvailableComPorts()
+        {
+            try
+            {
+                var ports = SerialPort
+                    .GetPortNames()
+                    .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+
+                cbCheckCom.BeginUpdate();
+                cbCheckCom.Items.Clear();
+
+                if (ports.Length == 0)
+                {
+                    cbCheckCom.Items.Add("(Không có cổng COM)");
+                    cbCheckCom.SelectedIndex = 0;
+                    cbCheckCom.Enabled = false;
+                    btnAddCom.Enabled = false;
+                    cbCheckCom.EndUpdate();
+                    return;
+                }
+
+                cbCheckCom.Items.AddRange(ports);
+                cbCheckCom.EndUpdate();
+
+                string? preferredPort = _serialPort?.PortName;
+                if (string.IsNullOrWhiteSpace(preferredPort))
+                {
+                    preferredPort = ConfigurationManager.AppSettings["PortScanner.PortName"];
+                }
+
+                int selectedIndex = -1;
+                if (!string.IsNullOrWhiteSpace(preferredPort))
+                {
+                    selectedIndex = Array.IndexOf(ports, preferredPort);
+                }
+
+                cbCheckCom.SelectedIndex = selectedIndex >= 0 ? selectedIndex : 0;
+                cbCheckCom.Enabled = true;
+                btnAddCom.Enabled = true;
+            }
+            catch (Exception ex)
+            {
+                cbCheckCom.Items.Clear();
+                cbCheckCom.Items.Add("(Lỗi tải cổng COM)");
+                cbCheckCom.SelectedIndex = 0;
+                cbCheckCom.Enabled = false;
+                btnAddCom.Enabled = false;
+                cbCheckCom.EndUpdate();
+                Debug.WriteLine($"[WARN] LoadAvailableComPorts: {ex.Message}");
+            }
+        }
+
+        private void CbCheckCom_DropDown(object? sender, EventArgs e)
+        {
+            LoadAvailableComPorts();
+        }
+
+        private void ConfigureSerialPort(string portName)
+        {
+            CloseSerialPort();
+
+            int baud = int.TryParse(ConfigurationManager.AppSettings["PortScanner.BaudRate"], out var b) ? b : 9600;
+            int dataBits = int.TryParse(ConfigurationManager.AppSettings["PortScanner.DataBits"], out var db) ? db : 8;
+
+            Parity parity = Parity.None;
+            var parityStr = ConfigurationManager.AppSettings["PortScanner.Parity"];
+            if (!string.IsNullOrWhiteSpace(parityStr) && Enum.TryParse(parityStr, true, out Parity parsedParity))
+            {
+                parity = parsedParity;
+            }
+
+            StopBits stopBits = StopBits.One;
+            var stopBitsStr = ConfigurationManager.AppSettings["PortScanner.StopBits"];
+            if (!string.IsNullOrWhiteSpace(stopBitsStr) && Enum.TryParse(stopBitsStr, true, out StopBits parsedStopBits))
+            {
+                stopBits = parsedStopBits;
+            }
+
+            var serialPort = new SerialPort(portName, baud, parity, dataBits, stopBits)
+            {
+                NewLine = "\r\n",
+                ReadTimeout = 500,
+                ReceivedBytesThreshold = 1,
+                DtrEnable = true,
+                RtsEnable = true
+            };
+
+            serialPort.DataReceived += SerialPort_DataReceived;
+
+            try
+            {
+                serialPort.Open();
+                _serialBuffer.Clear();
+                _serialPort = serialPort;
             }
             catch
             {
-                // ignore config parsing errors
+                serialPort.DataReceived -= SerialPort_DataReceived;
+                serialPort.Dispose();
+                throw;
             }
+        }
+        private void CloseSerialPort()
+        {
+            if (_serialPort == null)
+                return;
+
+            try
+            {
+                _serialPort.DataReceived -= SerialPort_DataReceived;
+                if (_serialPort.IsOpen)
+                {
+                    _serialPort.Close();
+                }
+                _serialPort.Dispose();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[WARN] CloseSerialPort: {ex.Message}");
+            }
+            finally
+            {
+                _serialPort = null;
+            }
+        }
+        private void btnAddCom_Click(object? sender, EventArgs e)
+        {
+            if (cbCheckCom.SelectedItem is not string selectedPort || selectedPort.StartsWith("(", StringComparison.Ordinal))
+            {
+                MessageBox.Show("Vui lòng chọn cổng COM hợp lệ.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            try
+            {
+                ConfigureSerialPort(selectedPort);
+                MessageBox.Show($"Đã cấu hình scanner với cổng {selectedPort}.", "Thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Không thể mở cổng {selectedPort}:\n{ex.Message}", "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+        }
+
+        private async void btnCheckSQL_Click(object? sender, EventArgs e)
+        {
+            btnCheckSQL.Enabled = false;
+            var previousCursor = Cursor;
+            var previousText = btnCheckSQL.Text;
+            Cursor = Cursors.WaitCursor;
+            btnCheckSQL.Text = "Checking...";
+
+            try
+            {
+                var (isSuccess, details) = await TryConnectToMySqlAsync();
+                if (isSuccess)
+                {
+                    MessageBox.Show("Kết nối MySQL: OK", "Kiểm tra MySQL", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                else
+                {
+                    var builder = new StringBuilder();
+                    builder.AppendLine("Kết nối MySQL: FAIL");
+
+                    if (!string.IsNullOrWhiteSpace(details))
+                    {
+                        builder.AppendLine();
+                        builder.AppendLine(details.Trim());
+                    }
+
+                    MessageBox.Show(builder.ToString(), "Kiểm tra MySQL", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+            finally
+            {
+                Cursor = previousCursor;
+                btnCheckSQL.Text = previousText;
+                btnCheckSQL.Enabled = true;
+            }
+        }
+
+        private static async Task<(bool Success, string? ErrorDetails)> TryConnectToMySqlAsync()
+        {
+            string? connectionString = BuildMySqlConnectionStringFromConfig(out var configurationError);
+
+            if (!string.IsNullOrWhiteSpace(configurationError))
+            {
+                return (false, configurationError);
+            }
+
+            if (string.IsNullOrWhiteSpace(connectionString))
+            {
+                return (false, "Không tìm thấy cấu hình kết nối MySQL trong App.config.");
+            }
+
+            await using var connection = new MySqlConnection(connectionString);
+
+            try
+            {
+                await connection.OpenAsync();
+                return (true, null);
+            }
+            catch (MySqlException ex)
+            {
+                return (false, BuildMySqlExceptionMessage(ex));
+            }
+            catch (Exception ex)
+            {
+                return (false, BuildExceptionDetails(ex));
+            }
+        }
+
+        private static string? BuildMySqlConnectionStringFromConfig(out string? errorMessage)
+        {
+            errorMessage = null;
+
+            string? connectionNameFromAppSettings = ConfigurationManager.AppSettings["MySqlConnectionName"];
+
+            if (!string.IsNullOrWhiteSpace(connectionNameFromAppSettings))
+            {
+                var configuredConnection = ConfigurationManager.ConnectionStrings[connectionNameFromAppSettings];
+                if (configuredConnection != null && !string.IsNullOrWhiteSpace(configuredConnection.ConnectionString))
+                {
+                    return configuredConnection.ConnectionString;
+                }
+            }
+
+            var defaultConnection = ConfigurationManager.ConnectionStrings["DefaultConnection"];
+            if (defaultConnection != null && !string.IsNullOrWhiteSpace(defaultConnection.ConnectionString))
+            {
+                return defaultConnection.ConnectionString;
+            }
+
+            var host = ConfigurationManager.AppSettings["MySqlHost"];
+            var port = ConfigurationManager.AppSettings["MySqlPort"];
+            var user = ConfigurationManager.AppSettings["MySqlUser"];
+            var password = ConfigurationManager.AppSettings["MySqlPassword"];
+            var database = ConfigurationManager.AppSettings["MySqlDatabase"];
+
+            if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(user) || string.IsNullOrWhiteSpace(database))
+            {
+                errorMessage = "Thiếu cấu hình MySQL (Host/User/Database).";
+                return null;
+            }
+
+            string resolvedPort = string.IsNullOrWhiteSpace(port) ? "3306" : port;
+
+            return $"server={host};port={resolvedPort};database={database};user={user};password={password};";
+        }
+
+        private static string BuildMySqlExceptionMessage(MySqlException ex)
+        {
+            var builder = new StringBuilder();
+            builder.AppendLine($"Mã lỗi MySQL: {ex.Number}");
+            if (!string.IsNullOrWhiteSpace(ex.SqlState))
+            {
+                builder.AppendLine($"SQLSTATE: {ex.SqlState}");
+            }
+            builder.AppendLine(ex.Message);
+
+            if (ex.InnerException != null)
+            {
+                builder.AppendLine();
+                builder.AppendLine(BuildExceptionDetails(ex.InnerException));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildExceptionDetails(Exception ex)
+        {
+            var builder = new StringBuilder();
+            Exception? current = ex;
+            while (current != null)
+            {
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                builder.AppendLine(current.Message);
+                current = current.InnerException;
+            }
+
+            return builder.ToString();
         }
 
 
@@ -622,23 +914,7 @@ namespace HSEVIMES_PCBA_Config
         // Ensure serial port is closed/disposed when form closes
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
-            try
-            {
-                if (_serialPort != null)
-                {
-                    _serialPort.DataReceived -= SerialPort_DataReceived;
-                    if (_serialPort.IsOpen)
-                    {
-                        try { _serialPort.Close(); } catch { }
-                    }
-                    _serialPort.Dispose();
-                    _serialPort = null;
-                }
-            }
-            catch
-            {
-                // ignore
-            }
+            CloseSerialPort();
             base.OnFormClosing(e);
         }
     }

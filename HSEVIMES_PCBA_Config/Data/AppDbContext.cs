@@ -10,6 +10,8 @@ namespace HSEVIMES_PCBA_Config.Data
         public DbSet<TbScanOut> TbScanOut { get; set; }
         public DbSet<TbRescan> TbRescan { get; set; }
 
+        public DbSet<TbModelDict> TbModelDict { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             if (!optionsBuilder.IsConfigured)

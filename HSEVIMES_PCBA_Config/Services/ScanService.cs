@@ -40,6 +40,16 @@ namespace HSEVIMES_PCBA_Config.Services
 
             string currentPartNo = pidData.Part_No ?? string.Empty;
 
+            TbModelDict? modelInfo = null;
+            if (!string.IsNullOrWhiteSpace(currentPartNo))
+            {
+                modelInfo = await _context.TbModelDict.AsNoTracking()
+                    .FirstOrDefaultAsync(m => m.Part_No == currentPartNo);
+            }
+
+            string? modelName = modelInfo?.Model_Name ?? pidData.Model_Name;
+            string? modelSuffix = modelInfo?.Model_Suffix ?? pidData.Model_Suffix;
+
             lock (_lock) // si se usa static
             {
                 if (_currentPba == null)
@@ -71,14 +81,14 @@ namespace HSEVIMES_PCBA_Config.Services
             var newRecord = new TbRescan
             {
                 Pba = _currentPba!,
-                Model_Name = pidData.Model_Name,
+                Model_Name = modelName,
                 Pid = pid,
                 Part_No = currentPartNo,
                 Work_Order = pidData.Work_Order,
                 Scan_At = pidData.Scan_At,
                 Rescan_At = DateTime.Now,
                 Qty = pidData.Qty,
-                Model_Suffix = pidData.Model_Suffix
+                Model_Suffix = modelSuffix
             };
 
             try
@@ -112,6 +122,55 @@ namespace HSEVIMES_PCBA_Config.Services
                 .ToListAsync();
         }
 
+        public async Task<TbModelDict?> GetModelInfoByPartNoAsync(string? partNo)
+        {
+            if (string.IsNullOrWhiteSpace(partNo))
+                return null;
+
+            return await _context.TbModelDict
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Part_No == partNo);
+        }
+
+        public class TodayPbaSummary
+        {
+            public string? Date { get; set; }
+            public int PbaCount { get; set; }
+        }
+
+        /*public async Task<List<TodayPbaSummary>> GetTodayPbaSummaryAsync()
+        {
+            var start = DateTime.Today;
+            var end = start.AddDays(1);
+
+            var total = await _context.TbRescan
+                .AsNoTracking()
+                .Where(r => r.Rescan_At.HasValue && r.Rescan_At.Value >= start && r.Rescan_At.Value < end)
+                .Select(r => r.Pba)
+                .Distinct()
+                .CountAsync();
+
+            return new List<TodayPbaSummary>
+            {
+                new TodayPbaSummary
+                {
+                    Date = start.ToString("yyyy-MM-dd"),
+                    PbaCount = total
+                }
+            };
+        }*/
+
+        public async Task<List<TbRescan>> GetTodayPbaSummaryAsync()
+        {
+            var start = DateTime.Today;
+            var end = start.AddDays(1);
+
+            return await _context.TbRescan
+                .AsNoTracking()
+                .Where(r => r.Rescan_At.HasValue && r.Rescan_At.Value >= start && r.Rescan_At.Value < end)
+                .OrderByDescending(r => r.Rescan_At)
+                .ToListAsync();
+        }
         public async Task<(bool isOk, string message)> DeletePbaAsync(string pba)
         {
             if (string.IsNullOrWhiteSpace(pba))
