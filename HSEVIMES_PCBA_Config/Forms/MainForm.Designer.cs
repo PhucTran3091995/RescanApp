@@ -30,7 +30,7 @@
         {
             components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MainForm));
-            DataGridViewCellStyle dataGridViewCellStyle1 = new DataGridViewCellStyle();
+            DataGridViewCellStyle dataGridViewCellStyle3 = new DataGridViewCellStyle();
             btnScan = new Button();
             lblMessage = new Label();
             flowLayoutPanel1 = new FlowLayoutPanel();
@@ -85,6 +85,14 @@
             dtPBADate = new DateTimePicker();
             grSearchPBAdata = new DataGridView();
             contextMenuStrip1 = new ContextMenuStrip(components);
+            tabPage3 = new TabPage();
+            tableLayoutPanel14 = new TableLayoutPanel();
+            tableLayoutPanel15 = new TableLayoutPanel();
+            lbCom = new Label();
+            cbCheckCom = new ComboBox();
+            lblCheckServer = new Label();
+            tableLayoutPanel16 = new TableLayoutPanel();
+            btnCheckSQL = new Button();
             tabControl1.SuspendLayout();
             tabPage1.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
@@ -106,6 +114,10 @@
             tableLayoutPanel12.SuspendLayout();
             tableLayoutPanel13.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)grSearchPBAdata).BeginInit();
+            tabPage3.SuspendLayout();
+            tableLayoutPanel14.SuspendLayout();
+            tableLayoutPanel15.SuspendLayout();
+            tableLayoutPanel16.SuspendLayout();
             SuspendLayout();
             // 
             // btnScan
@@ -143,6 +155,7 @@
             // 
             tabControl1.Controls.Add(tabPage1);
             tabControl1.Controls.Add(tabPage2);
+            tabControl1.Controls.Add(tabPage3);
             tabControl1.Dock = DockStyle.Fill;
             tabControl1.Location = new Point(0, 0);
             tabControl1.Name = "tabControl1";
@@ -776,14 +789,14 @@
             // 
             grSearchPBAdata.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
             grSearchPBAdata.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dataGridViewCellStyle1.Alignment = DataGridViewContentAlignment.TopCenter;
-            dataGridViewCellStyle1.BackColor = SystemColors.Window;
-            dataGridViewCellStyle1.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            dataGridViewCellStyle1.ForeColor = SystemColors.ControlText;
-            dataGridViewCellStyle1.SelectionBackColor = SystemColors.Highlight;
-            dataGridViewCellStyle1.SelectionForeColor = SystemColors.HighlightText;
-            dataGridViewCellStyle1.WrapMode = DataGridViewTriState.False;
-            grSearchPBAdata.DefaultCellStyle = dataGridViewCellStyle1;
+            dataGridViewCellStyle3.Alignment = DataGridViewContentAlignment.TopCenter;
+            dataGridViewCellStyle3.BackColor = SystemColors.Window;
+            dataGridViewCellStyle3.Font = new Font("Segoe UI", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            dataGridViewCellStyle3.ForeColor = SystemColors.ControlText;
+            dataGridViewCellStyle3.SelectionBackColor = SystemColors.Highlight;
+            dataGridViewCellStyle3.SelectionForeColor = SystemColors.HighlightText;
+            dataGridViewCellStyle3.WrapMode = DataGridViewTriState.False;
+            grSearchPBAdata.DefaultCellStyle = dataGridViewCellStyle3;
             grSearchPBAdata.Dock = DockStyle.Fill;
             grSearchPBAdata.EditMode = DataGridViewEditMode.EditOnF2;
             grSearchPBAdata.Location = new Point(3, 103);
@@ -797,6 +810,102 @@
             contextMenuStrip1.ImageScalingSize = new Size(24, 24);
             contextMenuStrip1.Name = "contextMenuStrip1";
             contextMenuStrip1.Size = new Size(61, 4);
+            // 
+            // tabPage3
+            // 
+            tabPage3.Controls.Add(tableLayoutPanel14);
+            tabPage3.Location = new Point(4, 34);
+            tabPage3.Name = "tabPage3";
+            tabPage3.Padding = new Padding(3);
+            tabPage3.Size = new Size(1446, 1081);
+            tabPage3.TabIndex = 2;
+            tabPage3.Text = "Setting";
+            tabPage3.UseVisualStyleBackColor = true;
+            // 
+            // tableLayoutPanel14
+            // 
+            tableLayoutPanel14.ColumnCount = 2;
+            tableLayoutPanel14.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            tableLayoutPanel14.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
+            tableLayoutPanel14.Controls.Add(tableLayoutPanel15, 0, 0);
+            tableLayoutPanel14.Controls.Add(tableLayoutPanel16, 1, 0);
+            tableLayoutPanel14.Dock = DockStyle.Fill;
+            tableLayoutPanel14.Location = new Point(3, 3);
+            tableLayoutPanel14.Name = "tableLayoutPanel14";
+            tableLayoutPanel14.RowCount = 2;
+            tableLayoutPanel14.RowStyles.Add(new RowStyle(SizeType.Percent, 9.465792F));
+            tableLayoutPanel14.RowStyles.Add(new RowStyle(SizeType.Percent, 90.53421F));
+            tableLayoutPanel14.Size = new Size(1440, 1075);
+            tableLayoutPanel14.TabIndex = 0;
+            // 
+            // tableLayoutPanel15
+            // 
+            tableLayoutPanel15.ColumnCount = 2;
+            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 24.2296925F));
+            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 75.77031F));
+            tableLayoutPanel15.Controls.Add(lbCom, 0, 0);
+            tableLayoutPanel15.Controls.Add(cbCheckCom, 1, 0);
+            tableLayoutPanel15.Dock = DockStyle.Fill;
+            tableLayoutPanel15.Location = new Point(3, 3);
+            tableLayoutPanel15.Name = "tableLayoutPanel15";
+            tableLayoutPanel15.RowCount = 1;
+            tableLayoutPanel15.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            tableLayoutPanel15.Size = new Size(714, 95);
+            tableLayoutPanel15.TabIndex = 0;
+            // 
+            // lbCom
+            // 
+            lbCom.Anchor = AnchorStyles.None;
+            lbCom.AutoSize = true;
+            lbCom.Location = new Point(61, 35);
+            lbCom.Name = "lbCom";
+            lbCom.Size = new Size(50, 25);
+            lbCom.TabIndex = 0;
+            lbCom.Text = "Com";
+            // 
+            // cbCheckCom
+            // 
+            cbCheckCom.Anchor = AnchorStyles.Left;
+            cbCheckCom.FormattingEnabled = true;
+            cbCheckCom.Location = new Point(176, 21);
+            cbCheckCom.Name = "cbCheckCom";
+            cbCheckCom.Size = new Size(201, 33);
+            cbCheckCom.TabIndex = 1;
+            // 
+            // lblCheckServer
+            // 
+            lblCheckServer.Anchor = AnchorStyles.None;
+            lblCheckServer.AutoSize = true;
+            lblCheckServer.Location = new Point(42, 35);
+            lblCheckServer.Name = "lblCheckServer";
+            lblCheckServer.Size = new Size(59, 25);
+            lblCheckServer.TabIndex = 1;
+            lblCheckServer.Text = "Check";
+            // 
+            // tableLayoutPanel16
+            // 
+            tableLayoutPanel16.ColumnCount = 2;
+            tableLayoutPanel16.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20.0280113F));
+            tableLayoutPanel16.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 79.97199F));
+            tableLayoutPanel16.Controls.Add(lblCheckServer, 0, 0);
+            tableLayoutPanel16.Controls.Add(btnCheckSQL, 1, 0);
+            tableLayoutPanel16.Dock = DockStyle.Fill;
+            tableLayoutPanel16.Location = new Point(723, 3);
+            tableLayoutPanel16.Name = "tableLayoutPanel16";
+            tableLayoutPanel16.RowCount = 1;
+            tableLayoutPanel16.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            tableLayoutPanel16.Size = new Size(714, 95);
+            tableLayoutPanel16.TabIndex = 2;
+            // 
+            // btnCheckSQL
+            // 
+            btnCheckSQL.Anchor = AnchorStyles.Left;
+            btnCheckSQL.Location = new Point(146, 25);
+            btnCheckSQL.Name = "btnCheckSQL";
+            btnCheckSQL.Size = new Size(159, 44);
+            btnCheckSQL.TabIndex = 2;
+            btnCheckSQL.Text = "Check Server";
+            btnCheckSQL.UseVisualStyleBackColor = true;
             // 
             // MainForm
             // 
@@ -840,6 +949,12 @@
             tableLayoutPanel13.ResumeLayout(false);
             tableLayoutPanel13.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)grSearchPBAdata).EndInit();
+            tabPage3.ResumeLayout(false);
+            tableLayoutPanel14.ResumeLayout(false);
+            tableLayoutPanel15.ResumeLayout(false);
+            tableLayoutPanel15.PerformLayout();
+            tableLayoutPanel16.ResumeLayout(false);
+            tableLayoutPanel16.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -898,5 +1013,13 @@
         private DateTimePicker dtPBADate;
         private Button btnSearchPBA;
         private Button btnDownLoad;
+        private TabPage tabPage3;
+        private TableLayoutPanel tableLayoutPanel14;
+        private TableLayoutPanel tableLayoutPanel15;
+        private Label lbCom;
+        private ComboBox cbCheckCom;
+        private Label lblCheckServer;
+        private TableLayoutPanel tableLayoutPanel16;
+        private Button btnCheckSQL;
     }
 }
