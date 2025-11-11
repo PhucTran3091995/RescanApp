@@ -59,11 +59,7 @@ namespace HSEVIMES_PCBA_Config.Services
                 else
                 {
                     var count = _context.TbRescan.Count(r => r.Pba == _currentPba);
-                    if (count >= 48)
-                    {
-                        _currentPba = GeneratePbaCode();
-                    }
-                    else if (count > 0)
+                    if (count > 0)
                     {
                         var firstPartNo = _context.TbRescan
                             .Where(r => r.Pba == _currentPba)
@@ -103,6 +99,13 @@ namespace HSEVIMES_PCBA_Config.Services
             }
         }
 
+        public async Task<int> GetRescanCountAsync(string? pba)
+        {
+            if (string.IsNullOrWhiteSpace(pba))
+                return 0;
+
+            return await _context.TbRescan.CountAsync(r => r.Pba == pba);
+        }
         public void ResetCurrentPba()
         {
             _currentPba = null;
@@ -137,29 +140,6 @@ namespace HSEVIMES_PCBA_Config.Services
             public string? Date { get; set; }
             public int PbaCount { get; set; }
         }
-
-        /*public async Task<List<TodayPbaSummary>> GetTodayPbaSummaryAsync()
-        {
-            var start = DateTime.Today;
-            var end = start.AddDays(1);
-
-            var total = await _context.TbRescan
-                .AsNoTracking()
-                .Where(r => r.Rescan_At.HasValue && r.Rescan_At.Value >= start && r.Rescan_At.Value < end)
-                .Select(r => r.Pba)
-                .Distinct()
-                .CountAsync();
-
-            return new List<TodayPbaSummary>
-            {
-                new TodayPbaSummary
-                {
-                    Date = start.ToString("yyyy-MM-dd"),
-                    PbaCount = total
-                }
-            };
-        }*/
-
         public async Task<List<TbRescan>> GetTodayPbaSummaryAsync()
         {
             var start = DateTime.Today;

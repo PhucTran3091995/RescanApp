@@ -25,6 +25,7 @@ namespace HSEVIMES_PCBA_Config
         // Insert inside MainForm class (near existing _serialPort field)
         private readonly StringBuilder _serialBuffer = new StringBuilder();
         private bool _isProcessingFromSerial = false;
+        private bool _suppressAutoModeEvents;
 
         public MainForm()
         {
@@ -35,9 +36,13 @@ namespace HSEVIMES_PCBA_Config
             // removed duplicate: do not re-subscribe btnCheckSQL here if designer already wires it
             btnAddCom.Click += btnAddCom_Click;
             cbCheckCom.DropDown += CbCheckCom_DropDown;
+            cb6Pids.CheckedChanged += AutoModeCheckBoxChanged;
+            cb24Pids.CheckedChanged += AutoModeCheckBoxChanged;
+            cbManual.CheckedChanged += AutoModeCheckBoxChanged;
             InitSerialFromAppSettings();
             txtBarcode.Focus();
             LoadAvailableComPorts();
+            SetManualMode();
         }
 
         private async void MainForm_Load(object? sender, EventArgs e)
@@ -92,12 +97,14 @@ namespace HSEVIMES_PCBA_Config
             if (ok) PlayPassSound(); else PlayFailSound();
 
             lblMessage.Text = message;
+            lblMessage.ForeColor = ok ? Color.Black : Color.Red;
 
             // reload data
             await RefreshTodayPbaSummaryAsync();
             if (ok)
             {
                 await DisplayRescanInfoAsync(pid);
+                await HandleAutoPrintAsync();
             }
 
             // Clear textbox so user can scan next PID immediately
@@ -165,7 +172,70 @@ namespace HSEVIMES_PCBA_Config
 
         // replace btnPrinter_Click implementation with this
         // replace existing btnPrinter_Click implementation with this
-        private async void btnPrinter_Click(object sender, EventArgs e)
+        private void SetManualMode()
+        {
+            _suppressAutoModeEvents = true;
+            cbManual.Checked = true;
+            cb6Pids.Checked = false;
+            cb24Pids.Checked = false;
+            _suppressAutoModeEvents = false;
+        }
+
+        private void AutoModeCheckBoxChanged(object? sender, EventArgs e)
+        {
+            if (_suppressAutoModeEvents)
+                return;
+
+            _suppressAutoModeEvents = true;
+
+            if (sender == cb6Pids && cb6Pids.Checked)
+            {
+                cb24Pids.Checked = false;
+                cbManual.Checked = false;
+            }
+            else if (sender == cb24Pids && cb24Pids.Checked)
+            {
+                cb6Pids.Checked = false;
+                cbManual.Checked = false;
+            }
+            else if (sender == cbManual && cbManual.Checked)
+            {
+                cb6Pids.Checked = false;
+                cb24Pids.Checked = false;
+            }
+
+            if (!cb6Pids.Checked && !cb24Pids.Checked && !cbManual.Checked)
+            {
+                cbManual.Checked = true;
+            }
+
+            _suppressAutoModeEvents = false;
+        }
+
+        private async Task HandleAutoPrintAsync()
+        {
+            if (cbManual.Checked)
+                return;
+
+            var currentPba = _scanService.CurrentPba;
+            if (string.IsNullOrWhiteSpace(currentPba))
+                return;
+
+            int count = await _scanService.GetRescanCountAsync(currentPba);
+            if (count == 0)
+                return;
+
+            int target = cb6Pids.Checked ? 6 : 24;
+            if (target <= 0)
+                return;
+
+            if (count % target == 0)
+            {
+                await PrintCurrentPbaAsync(true);
+            }
+        }
+
+        private async Task<bool> PrintCurrentPbaAsync(bool autoTriggered = false)
         {
             try
             {
@@ -177,7 +247,7 @@ namespace HSEVIMES_PCBA_Config
                         "Notice / Aviso",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
-                    return;
+                    return false;
                 }
 
                 var allRescans = await _scanService.GetAllRescansAsync();
@@ -193,7 +263,7 @@ namespace HSEVIMES_PCBA_Config
                         "Notice / Aviso",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Warning);
-                    return;
+                    return false;
                 }
 
                 // Use DrawLabel to render each TbRescan on its own print page
@@ -211,7 +281,7 @@ namespace HSEVIMES_PCBA_Config
                             "Error / Error",
                             MessageBoxButtons.OK,
                             MessageBoxIcon.Error);
-                        return;
+                        return false;
                     }
 
                     printDoc.PrintPage += (s, ev) =>
@@ -236,9 +306,14 @@ namespace HSEVIMES_PCBA_Config
                     ClearRescanInfo();
                 }
 
-                txtBarcode.Clear();
-                txtBarcode.Focus();
-                txtBarcode.SelectAll();
+                if (!autoTriggered)
+                {
+                    txtBarcode.Clear();
+                    txtBarcode.Focus();
+                    txtBarcode.SelectAll();
+                }
+
+                return hasPrinted;
             }
             catch (Exception ex)
             {
@@ -247,58 +322,63 @@ namespace HSEVIMES_PCBA_Config
                     "Error / Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
+                return false;
             }
+        }
+        private async void btnPrinter_Click(object sender, EventArgs e)
+        {
+            await PrintCurrentPbaAsync();
         }
 
         private async void btnDeletePBA_Click(object sender, EventArgs e)
-        {
-            string pba = txtDeletePBA.Text.Trim();
-            if (string.IsNullOrEmpty(pba))
-            {
-                MessageBox.Show(
-                    "Please enter the PBA to delete. / Por favor ingrese el PBA a eliminar.",
-                    "Notice / Aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Warning);
-                txtDeletePBA.Focus();
-                return;
-            }
+                {
+                    string pba = txtDeletePBA.Text.Trim();
+                    if (string.IsNullOrEmpty(pba))
+                    {
+                        MessageBox.Show(
+                            "Please enter the PBA to delete. / Por favor ingrese el PBA a eliminar.",
+                            "Notice / Aviso",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Warning);
+                        txtDeletePBA.Focus();
+                        return;
+                    }
 
-            // Optional: preview count before confirming
-            var all = await _scanService.GetAllRescansAsync();
-            var matches = all.Where(r => string.Equals(r.Pba, pba, StringComparison.OrdinalIgnoreCase)).ToList();
-            if (matches.Count == 0)
-            {
-                MessageBox.Show(
-                    $"PBA [{pba}] not found in database. / PBA [{pba}] no encontrado en la base de datos.",
-                    "Notice / Aviso",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-                return;
-            }
+                    // Optional: preview count before confirming
+                    var all = await _scanService.GetAllRescansAsync();
+                    var matches = all.Where(r => string.Equals(r.Pba, pba, StringComparison.OrdinalIgnoreCase)).ToList();
+                    if (matches.Count == 0)
+                    {
+                        MessageBox.Show(
+                            $"PBA [{pba}] not found in database. / PBA [{pba}] no encontrado en la base de datos.",
+                            "Notice / Aviso",
+                            MessageBoxButtons.OK,
+                            MessageBoxIcon.Information);
+                        return;
+                    }
 
-            var confirm = MessageBox.Show(
-                $"Found {matches.Count} records for PBA [{pba}].\r\nDo you want to delete them? / Se encontraron {matches.Count} registros para PBA [{pba}].\r\n¿Desea eliminarlos?",
-                "Confirm delete / Confirmar eliminación",
-                MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+                    var confirm = MessageBox.Show(
+                        $"Found {matches.Count} records for PBA [{pba}].\r\nDo you want to delete them? / Se encontraron {matches.Count} registros para PBA [{pba}].\r\n¿Desea eliminarlos?",
+                        "Confirm delete / Confirmar eliminación",
+                        MessageBoxButtons.YesNo,
+                        MessageBoxIcon.Question);
 
-            if (confirm != DialogResult.Yes)
-                return;
+                    if (confirm != DialogResult.Yes)
+                        return;
 
-            var (ok, message) = await _scanService.DeletePbaAsync(pba);
-            MessageBox.Show(
-                message + (ok ? " / Operation succeeded." : " / Operation failed."),
-                ok ? "Notice / Aviso" : "Error / Error",
-                MessageBoxButtons.OK,
-                ok ? MessageBoxIcon.Information : MessageBoxIcon.Error);
+                    var (ok, message) = await _scanService.DeletePbaAsync(pba);
+                    MessageBox.Show(
+                        message + (ok ? " / Operation succeeded." : " / Operation failed."),
+                        ok ? "Notice / Aviso" : "Error / Error",
+                        MessageBoxButtons.OK,
+                        ok ? MessageBoxIcon.Information : MessageBoxIcon.Error);
 
-            // refresh UI
-            await RefreshTodayPbaSummaryAsync();
+                    // refresh UI
+                    await RefreshTodayPbaSummaryAsync();
 
-            txtDeletePBA.Clear();
-            txtDeletePBA.Focus();
-        }
+                    txtDeletePBA.Clear();
+                    txtDeletePBA.Focus();
+                }
 
         private async void btnSearchPBA_Click(object sender, EventArgs e)
         {

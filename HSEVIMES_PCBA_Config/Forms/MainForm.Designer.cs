@@ -83,10 +83,11 @@
             label12 = new Label();
             tableLayoutPanel12 = new TableLayoutPanel();
             tableLayoutPanel13 = new TableLayoutPanel();
-            btnDownLoad = new Button();
+            dateTimePicker1 = new DateTimePicker();
             btnSearchPBA = new Button();
             txtSearchPBA = new TextBox();
             dtPBADate = new DateTimePicker();
+            btnDownLoad = new Button();
             grSearchPBAdata = new DataGridView();
             tabPage3 = new TabPage();
             tableLayoutPanel14 = new TableLayoutPanel();
@@ -95,11 +96,9 @@
             cbCheckCom = new ComboBox();
             cbAddCom = new CheckBox();
             btnAddCom = new Button();
-            tableLayoutPanel16 = new TableLayoutPanel();
             lblCheckServer = new Label();
             btnCheckSQL = new Button();
             contextMenuStrip1 = new ContextMenuStrip(components);
-            label13 = new Label();
             tabControl1.SuspendLayout();
             tabPage1.SuspendLayout();
             tableLayoutPanel1.SuspendLayout();
@@ -125,7 +124,6 @@
             tabPage3.SuspendLayout();
             tableLayoutPanel14.SuspendLayout();
             tableLayoutPanel15.SuspendLayout();
-            tableLayoutPanel16.SuspendLayout();
             SuspendLayout();
             // 
             // btnScan
@@ -144,12 +142,13 @@
             lblMessage.AutoSize = true;
             lblMessage.BackColor = SystemColors.ActiveCaption;
             lblMessage.Dock = DockStyle.Fill;
+            lblMessage.FlatStyle = FlatStyle.Flat;
             lblMessage.Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point, 0);
             lblMessage.Location = new Point(329, 0);
             lblMessage.Name = "lblMessage";
             lblMessage.Size = new Size(1100, 109);
             lblMessage.TabIndex = 3;
-            lblMessage.Text = "Message";
+            lblMessage.Text = "Message Results";
             lblMessage.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // flowLayoutPanel1
@@ -231,18 +230,18 @@
             // tableLayoutPanel2
             // 
             tableLayoutPanel2.BackColor = Color.Transparent;
-            tableLayoutPanel2.ColumnCount = 6;
+            tableLayoutPanel2.ColumnCount = 7;
             tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 100F));
             tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 500F));
             tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 118F));
             tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 208F));
-            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 334F));
+            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 142F));
+            tableLayoutPanel2.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 212F));
             tableLayoutPanel2.Controls.Add(txtBarcode, 1, 0);
             tableLayoutPanel2.Controls.Add(btnScan, 0, 0);
             tableLayoutPanel2.Controls.Add(btnPrinter, 2, 0);
-            tableLayoutPanel2.Controls.Add(tableLayoutPanel17, 4, 0);
-            tableLayoutPanel2.Controls.Add(label13, 3, 0);
+            tableLayoutPanel2.Controls.Add(tableLayoutPanel17, 6, 0);
             tableLayoutPanel2.Dock = DockStyle.Fill;
             tableLayoutPanel2.Location = new Point(4, 143);
             tableLayoutPanel2.Name = "tableLayoutPanel2";
@@ -274,52 +273,61 @@
             // 
             // tableLayoutPanel17
             // 
+            tableLayoutPanel17.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
             tableLayoutPanel17.ColumnCount = 1;
             tableLayoutPanel17.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
             tableLayoutPanel17.Controls.Add(cbManual, 0, 2);
             tableLayoutPanel17.Controls.Add(cb24Pids, 0, 1);
             tableLayoutPanel17.Controls.Add(cb6Pids, 0, 0);
-            tableLayoutPanel17.Location = new Point(893, 3);
+            tableLayoutPanel17.Dock = DockStyle.Fill;
+            tableLayoutPanel17.Location = new Point(1223, 3);
             tableLayoutPanel17.Name = "tableLayoutPanel17";
             tableLayoutPanel17.RowCount = 3;
             tableLayoutPanel17.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
             tableLayoutPanel17.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
             tableLayoutPanel17.RowStyles.Add(new RowStyle(SizeType.Percent, 33.3333321F));
-            tableLayoutPanel17.Size = new Size(202, 103);
+            tableLayoutPanel17.Size = new Size(206, 103);
             tableLayoutPanel17.TabIndex = 6;
             // 
             // cbManual
             // 
+            cbManual.Anchor = AnchorStyles.Left;
             cbManual.AutoSize = true;
-            cbManual.Location = new Point(3, 71);
+            cbManual.Checked = true;
+            cbManual.CheckState = CheckState.Checked;
+            cbManual.Location = new Point(4, 70);
             cbManual.Name = "cbManual";
             cbManual.Size = new Size(96, 29);
             cbManual.TabIndex = 2;
             cbManual.Text = "Manual";
+            cbManual.TextAlign = ContentAlignment.MiddleRight;
             cbManual.UseVisualStyleBackColor = true;
             // 
             // cb24Pids
             // 
+            cb24Pids.Anchor = AnchorStyles.Left;
             cb24Pids.AutoSize = true;
-            cb24Pids.Location = new Point(3, 37);
+            cb24Pids.Location = new Point(4, 37);
             cb24Pids.Name = "cb24Pids";
-            cb24Pids.Size = new Size(99, 28);
+            cb24Pids.Size = new Size(99, 26);
             cb24Pids.TabIndex = 1;
             cb24Pids.Text = "24 PIDs";
             cb24Pids.UseVisualStyleBackColor = true;
             // 
             // cb6Pids
             // 
+            cb6Pids.Anchor = AnchorStyles.Left;
             cb6Pids.AutoSize = true;
-            cb6Pids.Location = new Point(3, 3);
+            cb6Pids.Location = new Point(4, 4);
             cb6Pids.Name = "cb6Pids";
-            cb6Pids.Size = new Size(89, 28);
+            cb6Pids.Size = new Size(89, 26);
             cb6Pids.TabIndex = 0;
             cb6Pids.Text = "6 PIDs";
             cb6Pids.UseVisualStyleBackColor = true;
             // 
             // tableLayoutPanel3
             // 
+            tableLayoutPanel3.BackColor = SystemColors.ButtonFace;
             tableLayoutPanel3.ColumnCount = 3;
             tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 21.0526314F));
             tableLayoutPanel3.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 32F));
@@ -341,10 +349,11 @@
             lblResult.BackColor = SystemColors.ButtonFace;
             lblResult.Font = new Font("Segoe UI", 24F, FontStyle.Regular, GraphicsUnit.Point, 0);
             lblResult.ForeColor = SystemColors.ActiveCaptionText;
-            lblResult.Location = new Point(147, 22);
+            lblResult.Location = new Point(57, 22);
             lblResult.Name = "lblResult";
-            lblResult.Size = new Size(0, 65);
+            lblResult.Size = new Size(180, 65);
             lblResult.TabIndex = 5;
+            lblResult.Text = "OK/NG";
             lblResult.TextAlign = ContentAlignment.MiddleLeft;
             // 
             // tableLayoutPanel4
@@ -363,7 +372,8 @@
             // gridResults
             // 
             gridResults.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
-            gridResults.BackgroundColor = SystemColors.ButtonHighlight;
+            gridResults.BackgroundColor = SystemColors.ButtonFace;
+            gridResults.BorderStyle = BorderStyle.None;
             gridResults.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             gridResults.Dock = DockStyle.Fill;
             gridResults.Location = new Point(3, 3);
@@ -505,12 +515,13 @@
             tableLayoutPanel11.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel11.Controls.Add(lblProdDate, 0, 1);
             tableLayoutPanel11.Controls.Add(lblQty, 0, 0);
+            tableLayoutPanel11.Dock = DockStyle.Fill;
             tableLayoutPanel11.Location = new Point(345, 308);
             tableLayoutPanel11.Name = "tableLayoutPanel11";
             tableLayoutPanel11.RowCount = 2;
             tableLayoutPanel11.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             tableLayoutPanel11.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            tableLayoutPanel11.Size = new Size(334, 144);
+            tableLayoutPanel11.Size = new Size(334, 145);
             tableLayoutPanel11.TabIndex = 3;
             // 
             // lblProdDate
@@ -518,11 +529,12 @@
             lblProdDate.Anchor = AnchorStyles.None;
             lblProdDate.AutoSize = true;
             lblProdDate.Font = new Font("Segoe UI Black", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            lblProdDate.Location = new Point(118, 95);
+            lblProdDate.Location = new Point(118, 96);
             lblProdDate.Name = "lblProdDate";
             lblProdDate.Size = new Size(97, 25);
             lblProdDate.TabIndex = 18;
             lblProdDate.Text = "ProdDate";
+            lblProdDate.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // lblQty
             // 
@@ -541,12 +553,13 @@
             tableLayoutPanel10.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             tableLayoutPanel10.Controls.Add(label8, 0, 1);
             tableLayoutPanel10.Controls.Add(label7, 0, 0);
+            tableLayoutPanel10.Dock = DockStyle.Fill;
             tableLayoutPanel10.Location = new Point(4, 308);
             tableLayoutPanel10.Name = "tableLayoutPanel10";
             tableLayoutPanel10.RowCount = 2;
             tableLayoutPanel10.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             tableLayoutPanel10.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            tableLayoutPanel10.Size = new Size(331, 144);
+            tableLayoutPanel10.Size = new Size(334, 145);
             tableLayoutPanel10.TabIndex = 2;
             // 
             // label8
@@ -554,18 +567,19 @@
             label8.Anchor = AnchorStyles.None;
             label8.AutoSize = true;
             label8.Font = new Font("Segoe UI Black", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label8.Location = new Point(114, 95);
+            label8.Location = new Point(116, 96);
             label8.Name = "label8";
             label8.Size = new Size(102, 25);
             label8.TabIndex = 9;
             label8.Text = "Prod Date";
+            label8.TextAlign = ContentAlignment.MiddleCenter;
             // 
             // label7
             // 
             label7.Anchor = AnchorStyles.None;
             label7.AutoSize = true;
             label7.Font = new Font("Segoe UI Black", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
-            label7.Location = new Point(124, 23);
+            label7.Location = new Point(125, 23);
             label7.Name = "label7";
             label7.Size = new Size(83, 25);
             label7.TabIndex = 8;
@@ -628,7 +642,7 @@
             // 
             // picBarcodePBA
             // 
-            picBarcodePBA.Anchor = AnchorStyles.Top | AnchorStyles.Bottom;
+            picBarcodePBA.Anchor = AnchorStyles.None;
             picBarcodePBA.Location = new Point(692, 308);
             picBarcodePBA.Name = "picBarcodePBA";
             picBarcodePBA.Size = new Size(323, 145);
@@ -784,15 +798,17 @@
             // 
             // tableLayoutPanel13
             // 
-            tableLayoutPanel13.ColumnCount = 4;
-            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 200F));
-            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 500F));
-            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 500F));
-            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tableLayoutPanel13.Controls.Add(btnDownLoad, 3, 0);
+            tableLayoutPanel13.ColumnCount = 5;
+            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 127F));
+            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
+            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
+            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.3333321F));
+            tableLayoutPanel13.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 127F));
+            tableLayoutPanel13.Controls.Add(dateTimePicker1, 3, 0);
             tableLayoutPanel13.Controls.Add(btnSearchPBA, 0, 0);
             tableLayoutPanel13.Controls.Add(txtSearchPBA, 1, 0);
             tableLayoutPanel13.Controls.Add(dtPBADate, 2, 0);
+            tableLayoutPanel13.Controls.Add(btnDownLoad, 4, 0);
             tableLayoutPanel13.Dock = DockStyle.Fill;
             tableLayoutPanel13.Location = new Point(3, 3);
             tableLayoutPanel13.Name = "tableLayoutPanel13";
@@ -801,17 +817,14 @@
             tableLayoutPanel13.Size = new Size(1420, 94);
             tableLayoutPanel13.TabIndex = 0;
             // 
-            // btnDownLoad
+            // dateTimePicker1
             // 
-            btnDownLoad.Anchor = AnchorStyles.Left;
-            btnDownLoad.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            btnDownLoad.Location = new Point(1203, 12);
-            btnDownLoad.Name = "btnDownLoad";
-            btnDownLoad.Size = new Size(117, 69);
-            btnDownLoad.TabIndex = 3;
-            btnDownLoad.Text = "Download";
-            btnDownLoad.UseVisualStyleBackColor = true;
-            btnDownLoad.Click += btnDownLoad_Click;
+            dateTimePicker1.Anchor = AnchorStyles.None;
+            dateTimePicker1.Font = new Font("Segoe UI", 14F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            dateTimePicker1.Location = new Point(906, 24);
+            dateTimePicker1.Name = "dateTimePicker1";
+            dateTimePicker1.Size = new Size(382, 45);
+            dateTimePicker1.TabIndex = 4;
             // 
             // btnSearchPBA
             // 
@@ -819,7 +832,7 @@
             btnSearchPBA.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
             btnSearchPBA.Location = new Point(3, 12);
             btnSearchPBA.Name = "btnSearchPBA";
-            btnSearchPBA.Size = new Size(194, 69);
+            btnSearchPBA.Size = new Size(121, 69);
             btnSearchPBA.TabIndex = 2;
             btnSearchPBA.Text = "Go";
             btnSearchPBA.UseVisualStyleBackColor = true;
@@ -829,19 +842,31 @@
             // 
             txtSearchPBA.Anchor = AnchorStyles.None;
             txtSearchPBA.Font = new Font("Segoe UI", 14F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            txtSearchPBA.Location = new Point(224, 24);
+            txtSearchPBA.Location = new Point(130, 24);
             txtSearchPBA.Name = "txtSearchPBA";
-            txtSearchPBA.Size = new Size(452, 45);
+            txtSearchPBA.Size = new Size(382, 45);
             txtSearchPBA.TabIndex = 0;
             // 
             // dtPBADate
             // 
             dtPBADate.Anchor = AnchorStyles.None;
             dtPBADate.Font = new Font("Segoe UI", 14F, FontStyle.Regular, GraphicsUnit.Point, 0);
-            dtPBADate.Location = new Point(718, 24);
+            dtPBADate.Location = new Point(518, 24);
             dtPBADate.Name = "dtPBADate";
-            dtPBADate.Size = new Size(464, 45);
+            dtPBADate.Size = new Size(382, 45);
             dtPBADate.TabIndex = 1;
+            // 
+            // btnDownLoad
+            // 
+            btnDownLoad.Anchor = AnchorStyles.Left;
+            btnDownLoad.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            btnDownLoad.Location = new Point(1294, 12);
+            btnDownLoad.Name = "btnDownLoad";
+            btnDownLoad.Size = new Size(117, 69);
+            btnDownLoad.TabIndex = 3;
+            btnDownLoad.Text = "Download";
+            btnDownLoad.UseVisualStyleBackColor = true;
+            btnDownLoad.Click += btnDownLoad_Click;
             // 
             // grSearchPBAdata
             // 
@@ -876,11 +901,9 @@
             // 
             // tableLayoutPanel14
             // 
-            tableLayoutPanel14.ColumnCount = 2;
-            tableLayoutPanel14.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 52.5694427F));
-            tableLayoutPanel14.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 47.4305573F));
+            tableLayoutPanel14.ColumnCount = 1;
+            tableLayoutPanel14.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 77.5F));
             tableLayoutPanel14.Controls.Add(tableLayoutPanel15, 0, 0);
-            tableLayoutPanel14.Controls.Add(tableLayoutPanel16, 1, 0);
             tableLayoutPanel14.Dock = DockStyle.Fill;
             tableLayoutPanel14.Location = new Point(3, 3);
             tableLayoutPanel14.Name = "tableLayoutPanel14";
@@ -893,28 +916,32 @@
             // tableLayoutPanel15
             // 
             tableLayoutPanel15.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
-            tableLayoutPanel15.ColumnCount = 4;
-            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 24.2296925F));
-            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 75.77031F));
-            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 171F));
-            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 190F));
+            tableLayoutPanel15.ColumnCount = 6;
+            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 8.164689F));
+            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 24.9825535F));
+            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16.666666F));
+            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16.666666F));
+            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16.666666F));
+            tableLayoutPanel15.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 16.666666F));
+            tableLayoutPanel15.Controls.Add(cbAddCom, 3, 0);
+            tableLayoutPanel15.Controls.Add(lblCheckServer, 4, 0);
             tableLayoutPanel15.Controls.Add(lbCom, 0, 0);
             tableLayoutPanel15.Controls.Add(cbCheckCom, 1, 0);
-            tableLayoutPanel15.Controls.Add(cbAddCom, 2, 0);
-            tableLayoutPanel15.Controls.Add(btnAddCom, 3, 0);
+            tableLayoutPanel15.Controls.Add(btnAddCom, 2, 0);
+            tableLayoutPanel15.Controls.Add(btnCheckSQL, 5, 0);
             tableLayoutPanel15.Dock = DockStyle.Fill;
             tableLayoutPanel15.Location = new Point(3, 3);
             tableLayoutPanel15.Name = "tableLayoutPanel15";
             tableLayoutPanel15.RowCount = 1;
-            tableLayoutPanel15.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            tableLayoutPanel15.Size = new Size(751, 95);
+            tableLayoutPanel15.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            tableLayoutPanel15.Size = new Size(1434, 95);
             tableLayoutPanel15.TabIndex = 0;
             // 
             // lbCom
             // 
             lbCom.Anchor = AnchorStyles.None;
             lbCom.AutoSize = true;
-            lbCom.Location = new Point(22, 35);
+            lbCom.Location = new Point(34, 35);
             lbCom.Name = "lbCom";
             lbCom.Size = new Size(50, 25);
             lbCom.TabIndex = 0;
@@ -924,16 +951,16 @@
             // 
             cbCheckCom.Anchor = AnchorStyles.None;
             cbCheckCom.FormattingEnabled = true;
-            cbCheckCom.Location = new Point(140, 31);
+            cbCheckCom.Location = new Point(221, 31);
             cbCheckCom.Name = "cbCheckCom";
-            cbCheckCom.Size = new Size(201, 33);
+            cbCheckCom.Size = new Size(150, 33);
             cbCheckCom.TabIndex = 1;
             // 
             // cbAddCom
             // 
             cbAddCom.Anchor = AnchorStyles.None;
             cbAddCom.AutoSize = true;
-            cbAddCom.Location = new Point(417, 33);
+            cbAddCom.Location = new Point(779, 33);
             cbAddCom.Name = "cbAddCom";
             cbAddCom.Size = new Size(110, 29);
             cbAddCom.TabIndex = 3;
@@ -943,34 +970,18 @@
             // btnAddCom
             // 
             btnAddCom.Anchor = AnchorStyles.None;
-            btnAddCom.Location = new Point(603, 17);
+            btnAddCom.Location = new Point(543, 17);
             btnAddCom.Name = "btnAddCom";
             btnAddCom.Size = new Size(103, 60);
             btnAddCom.TabIndex = 4;
             btnAddCom.Text = "Add Com";
             btnAddCom.UseVisualStyleBackColor = true;
             // 
-            // tableLayoutPanel16
-            // 
-            tableLayoutPanel16.CellBorderStyle = TableLayoutPanelCellBorderStyle.Single;
-            tableLayoutPanel16.ColumnCount = 2;
-            tableLayoutPanel16.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 20.0280113F));
-            tableLayoutPanel16.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 79.97199F));
-            tableLayoutPanel16.Controls.Add(lblCheckServer, 0, 0);
-            tableLayoutPanel16.Controls.Add(btnCheckSQL, 1, 0);
-            tableLayoutPanel16.Dock = DockStyle.Fill;
-            tableLayoutPanel16.Location = new Point(760, 3);
-            tableLayoutPanel16.Name = "tableLayoutPanel16";
-            tableLayoutPanel16.RowCount = 1;
-            tableLayoutPanel16.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
-            tableLayoutPanel16.Size = new Size(677, 95);
-            tableLayoutPanel16.TabIndex = 2;
-            // 
             // lblCheckServer
             // 
             lblCheckServer.Anchor = AnchorStyles.None;
             lblCheckServer.AutoSize = true;
-            lblCheckServer.Location = new Point(38, 35);
+            lblCheckServer.Location = new Point(1043, 35);
             lblCheckServer.Name = "lblCheckServer";
             lblCheckServer.Size = new Size(59, 25);
             lblCheckServer.TabIndex = 1;
@@ -979,7 +990,7 @@
             // btnCheckSQL
             // 
             btnCheckSQL.Anchor = AnchorStyles.Left;
-            btnCheckSQL.Location = new Point(139, 25);
+            btnCheckSQL.Location = new Point(1196, 25);
             btnCheckSQL.Name = "btnCheckSQL";
             btnCheckSQL.Size = new Size(159, 44);
             btnCheckSQL.TabIndex = 2;
@@ -992,16 +1003,6 @@
             contextMenuStrip1.ImageScalingSize = new Size(24, 24);
             contextMenuStrip1.Name = "contextMenuStrip1";
             contextMenuStrip1.Size = new Size(61, 4);
-            // 
-            // label13
-            // 
-            label13.Anchor = AnchorStyles.None;
-            label13.AutoSize = true;
-            label13.Location = new Point(758, 42);
-            label13.Name = "label13";
-            label13.Size = new Size(92, 25);
-            label13.TabIndex = 7;
-            label13.Text = "Auto Print";
             // 
             // MainForm
             // 
@@ -1052,8 +1053,6 @@
             tableLayoutPanel14.ResumeLayout(false);
             tableLayoutPanel15.ResumeLayout(false);
             tableLayoutPanel15.PerformLayout();
-            tableLayoutPanel16.ResumeLayout(false);
-            tableLayoutPanel16.PerformLayout();
             ResumeLayout(false);
         }
 
@@ -1118,7 +1117,6 @@
         private Label lbCom;
         private ComboBox cbCheckCom;
         private Label lblCheckServer;
-        private TableLayoutPanel tableLayoutPanel16;
         private Button btnCheckSQL;
         private CheckBox cbAddCom;
         private Button btnAddCom;
@@ -1126,6 +1124,6 @@
         private CheckBox cbManual;
         private CheckBox cb24Pids;
         private CheckBox cb6Pids;
-        private Label label13;
+        private DateTimePicker dateTimePicker1;
     }
 }
