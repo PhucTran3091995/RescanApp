@@ -189,28 +189,13 @@ namespace HSEVIMES_PCBA_Config.Services
             public int Qty { get; set; }
         }
 
-        public async Task<List<PbaSummary>> GetPbaSummariesAsync(string? pbaFilter, DateTime? dateFilter)
+        public async Task<List<PbaSummary>> GetPbaSummariesByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            var query = _context.TbRescan.AsQueryable();
+            var start = startDate.Date;
+            var end = endDate.Date.AddDays(1);
 
-            if (!string.IsNullOrWhiteSpace(pbaFilter))
-            {
-                query = query.Where(r => r.Pba == pbaFilter);
-            }
-            else if (dateFilter.HasValue)
-            {
-                // Comparar por rango de fechas
-                var start = dateFilter.Value.Date;
-                var end = start.AddDays(1);
-                query = query.Where(r => r.Rescan_At.HasValue && r.Rescan_At.Value >= start && r.Rescan_At.Value < end);
-            }
-            else
-            {
-                // sin filtro: retornar lista vacía
-                return new List<PbaSummary>();
-            }
-
-            var grouped = await query
+            var grouped = await _context.TbRescan
+                .Where(r => r.Rescan_At.HasValue && r.Rescan_At.Value >= start && r.Rescan_At.Value < end)
                 .GroupBy(r => new { r.Pba, r.Part_No })
                 .Select(g => new PbaSummary
                 {
@@ -225,13 +210,13 @@ namespace HSEVIMES_PCBA_Config.Services
             return grouped;
         }
 
-        public async Task<List<TbRescan>> GetRescansByPbaAsync(string pba)
+        public async Task<List<TbRescan>> GetRescansByPbaOrPidAsync(string value)
         {
-            if (string.IsNullOrWhiteSpace(pba))
+            if (string.IsNullOrWhiteSpace(value))
                 return new List<TbRescan>();
 
             return await _context.TbRescan
-                .Where(r => r.Pba == pba)
+                .Where(r => r.Pba == value || r.Pid == value)
                 .OrderByDescending(r => r.Rescan_At)
                 .ToListAsync();
         }

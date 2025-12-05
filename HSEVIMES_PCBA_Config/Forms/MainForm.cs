@@ -1,8 +1,11 @@
-﻿using HSEVIMES_PCBA_Config.Services;
-using HSEVIMES_PCBA_Config.UI;
-using QRCoder;
-using HSEVIMES_PCBA_Config.Data;
+﻿using HSEVIMES_PCBA_Config.Data;
+using HSEVIMES_PCBA_Config.Models;
+using HSEVIMES_PCBA_Config.Services;
 using HSEVIMES_PCBA_Config.Services;            // available
+using HSEVIMES_PCBA_Config.UI;
+using Microsoft.EntityFrameworkCore;
+using MySqlConnector;
+using QRCoder;
 using System.Configuration;
 using System.Diagnostics;
 using System.Drawing;
@@ -12,9 +15,7 @@ using System.IO.Ports;
 using System.Management;
 using System.Media;
 using System.Text;
-using Microsoft.EntityFrameworkCore;
 using System.Windows.Forms; // ensure Keys, KeyEventArgs
-using MySqlConnector;
 
 namespace HSEVIMES_PCBA_Config
 {
@@ -37,6 +38,9 @@ namespace HSEVIMES_PCBA_Config
             btnAddCom.Click += btnAddCom_Click;
             cbCheckCom.DropDown += CbCheckCom_DropDown;
             cb6Pids.CheckedChanged += AutoModeCheckBoxChanged;
+            cb8Pids.CheckedChanged += AutoModeCheckBoxChanged;
+            cb12Pids.CheckedChanged += AutoModeCheckBoxChanged;
+            cb20Pids.CheckedChanged += AutoModeCheckBoxChanged;
             cb24Pids.CheckedChanged += AutoModeCheckBoxChanged;
             cbManual.CheckedChanged += AutoModeCheckBoxChanged;
             InitSerialFromAppSettings();
@@ -177,43 +181,60 @@ namespace HSEVIMES_PCBA_Config
             _suppressAutoModeEvents = true;
             cbManual.Checked = true;
             cb6Pids.Checked = false;
+            cb8Pids.Checked = false;
+            cb12Pids.Checked = false;
+            cb20Pids.Checked = false;
             cb24Pids.Checked = false;
             _suppressAutoModeEvents = false;
         }
 
         private void AutoModeCheckBoxChanged(object? sender, EventArgs e)
         {
+            // 1. Chặn sự kiện lặp lại vô hạn
             if (_suppressAutoModeEvents)
                 return;
 
             _suppressAutoModeEvents = true;
 
-            if (sender == cb6Pids && cb6Pids.Checked)
+            try
             {
-                cb24Pids.Checked = false;
-                cbManual.Checked = false;
-            }
-            else if (sender == cb24Pids && cb24Pids.Checked)
-            {
-                cb6Pids.Checked = false;
-                cbManual.Checked = false;
-            }
-            else if (sender == cbManual && cbManual.Checked)
-            {
-                cb6Pids.Checked = false;
-                cb24Pids.Checked = false;
-            }
+                var currentCheckBox = sender as CheckBox;
 
-            if (!cb6Pids.Checked && !cb24Pids.Checked && !cbManual.Checked)
-            {
-                cbManual.Checked = true;
-            }
+                // TRƯỜNG HỢP 1: Người dùng vừa TICK CHỌN một ô
+                if (currentCheckBox != null && currentCheckBox.Checked)
+                {
+                    // Tắt tất cả các ô khác ngoại trừ ô vừa được chọn (currentCheckBox)
+                    if (cbManual != currentCheckBox) cbManual.Checked = false;
+                    if (cb6Pids != currentCheckBox) cb6Pids.Checked = false;
+                    if (cb8Pids != currentCheckBox) cb8Pids.Checked = false;
+                    if (cb12Pids != currentCheckBox) cb12Pids.Checked = false;
+                    if (cb20Pids != currentCheckBox) cb20Pids.Checked = false;
+                    if (cb24Pids != currentCheckBox) cb24Pids.Checked = false;
+                }
+                // TRƯỜNG HỢP 2: Người dùng BỎ CHỌN ô đang bật (hoặc không có ô nào bật)
+                else
+                {
+                    // Kiểm tra xem hiện tại có ô nào đang được bật không
+                    bool isAnyChecked = cbManual.Checked || cb6Pids.Checked || cb8Pids.Checked ||
+                                        cb12Pids.Checked || cb20Pids.Checked || cb24Pids.Checked;
 
-            _suppressAutoModeEvents = false;
+                    // Nếu không có ô nào bật -> Bắt buộc quay về chế độ Manual
+                    if (!isAnyChecked)
+                    {
+                        cbManual.Checked = true;
+                    }
+                }
+            }
+            finally
+            {
+                // 2. Mở lại sự kiện sau khi xử lý xong
+                _suppressAutoModeEvents = false;
+            }
         }
 
         private async Task HandleAutoPrintAsync()
         {
+            // Nếu đang ở chế độ Manual thì không làm gì cả
             if (cbManual.Checked)
                 return;
 
@@ -221,110 +242,140 @@ namespace HSEVIMES_PCBA_Config
             if (string.IsNullOrWhiteSpace(currentPba))
                 return;
 
+            // Lấy số lượng hiện tại đã scan cho PBA này
             int count = await _scanService.GetRescanCountAsync(currentPba);
             if (count == 0)
                 return;
 
-            int target = cb6Pids.Checked ? 6 : 24;
-            if (target <= 0)
-                return;
+            // Xác định target dựa trên checkbox được chọn
+            int target = 0;
+            if (cb6Pids.Checked) target = 6;
+            else if (cb8Pids.Checked) target = 8;
+            else if (cb12Pids.Checked) target = 12;
+            else if (cb20Pids.Checked) target = 20;
+            else if (cb24Pids.Checked) target = 24;
 
-            if (count % target == 0)
+            if (target <= 0) return;
+
+            // Nếu số lượng scan chia hết cho target (ví dụ scan đủ 6/6, 12/12...)
+            if (count >= target && count % target == 0)
             {
+                // Gọi hàm in với cờ autoTriggered = true
                 await PrintCurrentPbaAsync(true);
             }
         }
 
         private async Task<bool> PrintCurrentPbaAsync(bool autoTriggered = false)
         {
+            var currentPba = _scanService.CurrentPba;
+            if (string.IsNullOrEmpty(currentPba))
+            {
+                if (!autoTriggered) // Chỉ hiện thông báo nếu bấm tay, auto thì ko hiện để tránh spam
+                    MessageBox.Show("No current PBA to print.", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            // Lấy danh sách item để lấy thông tin model, partno...
+            var allRescans = await _scanService.GetAllRescansAsync();
+            var itemToPrint = allRescans.FirstOrDefault(r => r.Pba == currentPba);
+
+            if (itemToPrint == null)
+            {
+                MessageBox.Show("No records found for current PBA.", "Notice", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return false;
+            }
+
+            // GỌI HÀM IN CHUNG
+            bool hasPrinted = ExecutePrintJob(itemToPrint);
+
+            // NẾU IN THÀNH CÔNG -> RESET UI & PBA HIỆN TẠI
+            if (hasPrinted)
+            {
+                _scanService.ResetCurrentPba(); // Xóa mã PBA hiện tại để bắt đầu lô mới
+                await RefreshTodayPbaSummaryAsync(); // Refresh lưới
+                ClearRescanInfo(); // Xóa thông tin trên màn hình
+            }
+
+            // Xử lý focus ô barcode
+            if (!autoTriggered)
+            {
+                txtBarcode.Clear();
+                txtBarcode.Focus();
+            }
+            else
+            {
+                // Nếu là auto print, cũng nên clear text để sẵn sàng cho con tiếp theo
+                // Dùng BeginInvoke để đảm bảo UI thread xử lý đúng sau khi in
+                this.BeginInvoke(new Action(() => {
+                    txtBarcode.Clear();
+                    txtBarcode.Focus();
+                }));
+            }
+
+            return hasPrinted;
+        }
+
+        /// <summary>
+        /// Hàm in chung: Nhận vào 1 đối tượng TbRescan (đại diện cho PBA) và thực hiện in
+        /// </summary>
+        private bool ExecutePrintJob(TbRescan dataItem)
+        {
+            Debug.WriteLine(">>> [START] ExecutePrintJob");
             try
             {
-                var currentPba = _scanService.CurrentPba;
-                if (string.IsNullOrEmpty(currentPba))
-                {
-                    MessageBox.Show(
-                        "No current PBA to print. Please scan PID first. / No hay PBA actual para imprimir. Por favor escanee el PID primero.",
-                        "Notice / Aviso",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                    return false;
-                }
-
-                var allRescans = await _scanService.GetAllRescansAsync();
-                var itemsInCurrentPba = allRescans
-                    .Where(r => r.Pba == currentPba)
-                    .OrderBy(r => r.Id)
-                    .ToList();
-
-                if (itemsInCurrentPba.Count == 0)
-                {
-                    MessageBox.Show(
-                        "No records found for current PBA. / No se encontraron registros para el PBA actual.",
-                        "Notice / Aviso",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Warning);
-                    return false;
-                }
-
-                // Use DrawLabel to render each TbRescan on its own print page
                 var drawer = new DrawLabel();
-                int pageIndex = 0;
+                bool success = false;
 
-                bool hasPrinted = false;
                 using (var printDoc = new PrintDocument())
                 {
+                    // 1. Tắt dialog "Printing..."
+                    printDoc.PrintController = new StandardPrintController();
 
                     if (!printDoc.PrinterSettings.IsValid)
                     {
-                        MessageBox.Show(
-                            "Printer is invalid or not connected. / La impresora no es válida o no está conectada.",
-                            "Error / Error",
-                            MessageBoxButtons.OK,
-                            MessageBoxIcon.Error);
+                        MessageBox.Show("Printer invalid.", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return false;
                     }
 
+                    // 2. Cấu hình khổ giấy (Đơn vị: 1/100 inch)
+                    // 55mm ~ 217, 40mm ~ 157
+                    printDoc.DefaultPageSettings.PaperSize = new PaperSize("Custom Label", 217, 157);
+
+                    // 3. Set Margins = 0
+                    printDoc.DefaultPageSettings.Margins = new Margins(0, 0, 0, 0);
+
+                    // 4. QUAN TRỌNG: Tắt OriginAtMargins để (0,0) là góc giấy
+                    printDoc.OriginAtMargins = false;
+
+                    // 5. Gắn sự kiện in
                     printDoc.PrintPage += (s, ev) =>
                     {
-                        // render current item
-                        var item = itemsInCurrentPba[pageIndex];
-                        drawer.RenderLabel(ev, item);
-
-                        // advance page index and indicate more pages if needed
-                        ev.HasMorePages = false;
+                        try
+                        {
+                            drawer.RenderLabel(ev, dataItem);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($">>> [FATAL] PrintPage Event Error: {ex.Message}");
+                        }
                     };
 
-                    // print (synchronous)
+                    // 6. Gọi lệnh in
+                    Debug.WriteLine(">>> [INFO] Calling printDoc.Print()");
                     printDoc.Print();
-                    hasPrinted = true;
+                    success = true;
                 }
 
-                if (hasPrinted)
-                {
-                    _scanService.ResetCurrentPba();
-                    await RefreshTodayPbaSummaryAsync();
-                    ClearRescanInfo();
-                }
-
-                if (!autoTriggered)
-                {
-                    txtBarcode.Clear();
-                    txtBarcode.Focus();
-                    txtBarcode.SelectAll();
-                }
-
-                return hasPrinted;
+                return success;
             }
             catch (Exception ex)
             {
-                MessageBox.Show(
-                    "Print label error: " + ex.Message + " / Error al imprimir etiqueta: " + ex.Message,
-                    "Error / Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                Debug.WriteLine($">>> [ERROR] ExecutePrintJob: {ex.Message}");
+                MessageBox.Show("Printing Error: " + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }
         }
+
         private async void btnPrinter_Click(object sender, EventArgs e)
         {
             await PrintCurrentPbaAsync();
@@ -382,35 +433,29 @@ namespace HSEVIMES_PCBA_Config
 
         private async void btnSearchPBA_Click(object sender, EventArgs e)
         {
-            string pba = txtSearchPBA.Text.Trim();
+            string searchValue = txtSearchPBA.Text.Trim();
+            DateTime startDate = dtPBADate.Value.Date;
+            DateTime endDate = dtPBAToDate.Value.Date;
 
-            // If user entered PBA use it; otherwise use date from dtPBADate
-            DateTime? dateFilter = null;
-            if (string.IsNullOrEmpty(pba))
-            {
-                // Use selected date for searching PBAs in that day
-                dateFilter = dtPBADate.Value.Date;
-            }
-
-            if (string.IsNullOrEmpty(pba) && dateFilter == null)
+            if (endDate < startDate)
             {
                 MessageBox.Show(
-                    "Please enter a PBA or select a date to search. / Por favor ingrese un PBA o seleccione una fecha para buscar.",
+                    "The end date must be greater than or equal to the start date. / La fecha final debe ser mayor o igual que la fecha inicial.",
                     "Notice / Aviso",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
+                dtPBAToDate.Focus();
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(pba))
+            if (!string.IsNullOrWhiteSpace(searchValue))
             {
-                // New behavior: when user types a PBA, fetch full records for that PBA and show all details
-                var records = await _scanService.GetRescansByPbaAsync(pba);
+                var records = await _scanService.GetRescansByPbaOrPidAsync(searchValue);
 
                 if (records == null || records.Count == 0)
                 {
                     MessageBox.Show(
-                        $"No records found for PBA [{pba}]. / No se encontraron registros para PBA [{pba}].",
+                        $"No records found for PBA/PID [{searchValue}]. / No se encontraron registros para PBA/PID [{searchValue}].",
                         "Notice / Aviso",
                         MessageBoxButtons.OK,
                         MessageBoxIcon.Information);
@@ -418,7 +463,6 @@ namespace HSEVIMES_PCBA_Config
                     return;
                 }
 
-                // Bind full details to grid (explicit columns)
                 var bindList = records.Select(r => new
                 {
                     r.Id,
@@ -439,11 +483,7 @@ namespace HSEVIMES_PCBA_Config
             }
             else
             {
-                // Existing behavior: search summaries by date
-                var results = await _scanService.GetPbaSummariesAsync(
-                    string.IsNullOrWhiteSpace(pba) ? null : pba,
-                    dateFilter
-                );
+                var results = await _scanService.GetPbaSummariesByDateRangeAsync(startDate, endDate);
 
                 if (results == null || results.Count == 0)
                 {
@@ -456,18 +496,53 @@ namespace HSEVIMES_PCBA_Config
                     return;
                 }
 
-                // Bind results to grid with required columns:
                 var bindList = results.Select(r => new
                 {
                     PBA_No = r.Pba,
                     Part_No = r.PartNo,
-                    PBA_date = r.RescanAt,
+                    PBA_date = r.RescanAt?.ToString("yyyy-MM-dd HH:mm:ss"),
                     Qty = r.Qty
                 }).ToList();
 
                 grSearchPBAdata.DataSource = null;
                 grSearchPBAdata.DataSource = bindList;
                 grSearchPBAdata.Refresh();
+            }
+        }
+
+        private async void btnReprintPBA_Click(object sender, EventArgs e)
+        {
+            string pbaCode = tbReprintPBA.Text.Trim();
+
+            if (string.IsNullOrEmpty(pbaCode))
+            {
+                MessageBox.Show("Please enter PBA code to reprint.", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                tbReprintPBA.Focus();
+                return;
+            }
+
+            // 1. Tìm kiếm trong Database xem PBA này có tồn tại không
+            // Ta dùng hàm GetRescansByPbaOrPidAsync có sẵn hoặc tự query
+            var records = await _scanService.GetRescansByPbaOrPidAsync(pbaCode);
+
+            // Lọc chính xác theo PBA (vì hàm kia có thể tìm theo PID)
+            var pbaRecord = records.FirstOrDefault(r => r.Pba == pbaCode);
+
+            if (pbaRecord == null)
+            {
+                MessageBox.Show($"PBA [{pbaCode}] not found in database.", "Not Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            // 2. Thực hiện in
+            // DrawLabel sẽ tự động tính lại tổng Qty từ DB dựa trên pbaRecord.Pba
+            bool result = ExecutePrintJob(pbaRecord);
+
+            if (result)
+            {
+                MessageBox.Show("Reprint command sent successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                tbReprintPBA.SelectAll();
+                tbReprintPBA.Focus();
             }
         }
 
